@@ -10,6 +10,7 @@ class CustomImageDataset(Dataset):
         self.img_dir = img_dir
         self.transform = transform
         self.img_labels = self._load_labels()
+        self.author_to_idx = self._create_author_to_idx()
 
     def _load_labels(self):
         img_labels = []
@@ -25,6 +26,10 @@ class CustomImageDataset(Dataset):
         print(f"Found {len(img_labels)} images in {self.img_dir}\n")
         return img_labels
 
+    def _create_author_to_idx(self):
+        authors = set([label[2] for label in self.img_labels])
+        return {author: idx for idx, author in enumerate(authors)}
+
     def __len__(self):
         return len(self.img_labels)
 
@@ -36,4 +41,5 @@ class CustomImageDataset(Dataset):
         image = read_image(img_path, mode=ImageReadMode.RGB).float() / 255.0
         if self.transform:
             image = self.transform(image)
-        return image, digit, author
+        author_idx = self.author_to_idx[author]
+        return image, digit, author_idx
