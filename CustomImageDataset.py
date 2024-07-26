@@ -1,10 +1,10 @@
 import os
-from torchvision.io import read_image
+from torchvision.io import read_image, ImageReadMode
 from torch.utils.data import Dataset
 
 
 
-# 自定义数据集类
+# Custom dataset class to handle loading and processing of image data
 class CustomImageDataset(Dataset):
     def __init__(self, img_dir, transform=None):
         self.img_dir = img_dir
@@ -13,10 +13,16 @@ class CustomImageDataset(Dataset):
 
     def _load_labels(self):
         img_labels = []
+        # Iterate through all files in the image directory
         for img_name in os.listdir(self.img_dir):
-            if img_name.endswith('.png'):
-                digit, _, author = img_name.split('_')
-                img_labels.append((img_name, int(digit), author))
+            if img_name.endswith('.jpg'):
+                parts = img_name.split('_')
+                if len(parts) == 3:
+                    digit, _, author = parts
+                    # Remove file extension
+                    author = author.split('.')[0]
+                    img_labels.append((img_name, int(digit), author))
+        print(f"Found {len(img_labels)} images in {self.img_dir}\n")
         return img_labels
 
     def __len__(self):
@@ -25,7 +31,9 @@ class CustomImageDataset(Dataset):
     def __getitem__(self, idx):
         img_name, digit, author = self.img_labels[idx]
         img_path = os.path.join(self.img_dir, img_name)
-        image = read_image(img_path).float() / 255.0
+        
+        # Normalize to 0-1 and ensure RGB
+        image = read_image(img_path, mode=ImageReadMode.RGB).float() / 255.0
         if self.transform:
             image = self.transform(image)
         return image, digit, author
