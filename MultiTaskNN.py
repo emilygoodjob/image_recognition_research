@@ -21,9 +21,9 @@ class MultiTaskNN(nn.Module):
 
     def forward(self, x):
         # Apply convolutional layers, ReLU activation, and max pooling
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = self.pool(F.relu(self.conv3(x)))
+        x = self.pool(F.relu(self.conv1(x))) # 32 * 32 * 32
+        x = self.pool(F.relu(self.conv2(x))) # 16 * 16 * 64
+        x = self.pool(F.relu(self.conv3(x))) # 8 * 8 * 128
         # Flatten the output from the convolutional layers
         x = x.view(-1, 128 * 8 * 8)
         x = F.relu(self.fc1(x))

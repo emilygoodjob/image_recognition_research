@@ -17,6 +17,7 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 from MultiTaskNN import MultiTaskNN
 from CustomImageDataset import CustomImageDataset
+import pandas as pd
 
 
 
@@ -42,7 +43,7 @@ def load_and_preprocess_data(img_dir):
     return train_loader, test_loader, dataset.author_to_idx
 
 # Training function
-def train(model, device, train_loader, optimizer, epoch):
+def train_together(model, device, train_loader, optimizer, epoch):
     model.train()
     for batch_idx, (data, digit_target, author_target) in enumerate(train_loader):
         data, digit_target, author_target = data.to(device), digit_target.to(device), author_target.to(device)
@@ -50,11 +51,38 @@ def train(model, device, train_loader, optimizer, epoch):
         digit_output, author_output = model(data)
         digit_loss = F.nll_loss(digit_output, digit_target)
         author_loss = F.nll_loss(author_output, author_target)
-        loss = digit_loss + author_loss
+        loss = 0.7 * digit_loss + 0.3 * author_loss
         loss.backward()
         optimizer.step()
         if batch_idx % 100 == 0:
             print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item():.6f}')
+
+
+# Function to train the model for digit classification
+def digit_train(model, device, train_loader, optimizer, epoch):
+    model.train()
+    for batch_idx, (data, digit_target, author_target) in enumerate(train_loader):
+        data, digit_target = data.to(device), digit_target.to(device)
+        optimizer.zero_grad()
+        digit_output, _ = model(data)
+        digit_loss = F.nll_loss(digit_output, digit_target)
+        digit_loss.backward()
+        optimizer.step()
+        if batch_idx % 100 == 0:
+            print(f'Digit Train Epoch: {epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {digit_loss.item():.6f}')
+
+# Function to train the model for author classification
+def author_train(model, device, train_loader, optimizer, epoch):
+    model.train()
+    for batch_idx, (data, digit_target, author_target) in enumerate(train_loader):
+        data, author_target = data.to(device), author_target.to(device)
+        optimizer.zero_grad()
+        _, author_output = model(data)
+        author_loss = F.nll_loss(author_output, author_target)
+        author_loss.backward()
+        optimizer.step()
+        if batch_idx % 100 == 0:
+            print(f'Author Train Epoch: {epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {author_loss.item():.6f}')
 
 # Testing function
 def test(model, device, test_loader):
@@ -74,7 +102,12 @@ def test(model, device, test_loader):
             correct_author += author_pred.eq(author_target.view_as(author_pred)).sum().item()
 
     test_loss /= len(test_loader.dataset)
-    print(f'\nTest set: Average loss: {test_loss:.4f}, Digit Accuracy: {correct_digit}/{len(test_loader.dataset)} ({100. * correct_digit / len(test_loader.dataset):.0f}%), Author Accuracy: {correct_author}/{len(test_loader.dataset)} ({100. * correct_author / len(test_loader.dataset):.0f}%)')
+    digit_accuracy = 100. * correct_digit / len(test_loader.dataset)
+    author_accuracy = 100. * correct_author / len(test_loader.dataset)
+    combined_accuracy = (digit_accuracy + author_accuracy) / 2
+    print(f'\nTest set: Average loss: {test_loss:.4f}, Digit Accuracy: {correct_digit}/{len(test_loader.dataset)} ({digit_accuracy:.0f}%), Author Accuracy: {correct_author}/{len(test_loader.dataset)} ({author_accuracy:.0f}%), Combined Accuracy: {combined_accuracy: .0f}%')
+    
+    return digit_accuracy, author_accuracy, combined_accuracy
 
 # Main function to execute the training and testing process
 def main():
@@ -90,10 +123,24 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     scheduler = StepLR(optimizer, step_size=1, gamma=0.7)
     
+    accuracies = {'Epoch': [], 'Digit Accuracy': [], 'Author Accuracy': [], 'Combined Accuracy': []}
+    
     for epoch in range(1, 21):
-        train(model, device, train_loader, optimizer, epoch)
-        test(model, device, test_loader)
+        # train(model, device, train_loader, optimizer, epoch)
+        digit_train(model, device, train_loader, optimizer, epoch)
+        author_train(model, device, train_loader, optimizer, epoch)
+        train_together(model, device, train_loader, optimizer, epoch)
+        digit_accuracy, author_accuracy, combined_accuracy = test(model, device, test_loader)
         scheduler.step()
+        
+        accuracies['Epoch'].append(epoch)
+        accuracies['Digit Accuracy'].append(digit_accuracy)
+        accuracies['Author Accuracy'].append(author_accuracy)
+        accuracies['Combined Accuracy'].append(combined_accuracy)
+    
+    # Save accuracies to Excel file
+    df = pd.DataFrame(accuracies)
+    df.to_excel('accuracies.xlsx', index=False)
     
     torch.save(model.state_dict(), "multi_task_model.pt")
 
