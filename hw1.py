@@ -104,10 +104,9 @@ def test(model, device, test_loader):
     test_loss /= len(test_loader.dataset)
     digit_accuracy = 100. * correct_digit / len(test_loader.dataset)
     author_accuracy = 100. * correct_author / len(test_loader.dataset)
-    combined_accuracy = (digit_accuracy + author_accuracy) / 2
-    print(f'\nTest set: Average loss: {test_loss:.4f}, Digit Accuracy: {correct_digit}/{len(test_loader.dataset)} ({digit_accuracy:.0f}%), Author Accuracy: {correct_author}/{len(test_loader.dataset)} ({author_accuracy:.0f}%), Combined Accuracy: {combined_accuracy: .0f}%')
+    print(f'\nTest set: Average loss: {test_loss:.4f}, Digit Accuracy: {correct_digit}/{len(test_loader.dataset)} ({digit_accuracy:.0f}%), Author Accuracy: {correct_author}/{len(test_loader.dataset)} ({author_accuracy:.0f}%)')
     
-    return digit_accuracy, author_accuracy, combined_accuracy
+    return digit_accuracy, author_accuracy
 
 # Main function to execute the training and testing process
 def main():
@@ -123,20 +122,30 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     scheduler = StepLR(optimizer, step_size=1, gamma=0.7)
     
-    accuracies = {'Epoch': [], 'Digit Accuracy': [], 'Author Accuracy': [], 'Combined Accuracy': []}
+    accuracies = {'Epoch': [], 'Digit Accuracy (Digit)': [], 'Author Accuracy (Digit)': []}
+    # accuracies = {'Epoch': [], 'Digit Accuracy (Author)': [], 'Author Accuracy (Author)': []}
+    # accuracies = {'Epoch': [], 'Digit Accuracy (Combined)': [], 'Author Accuracy (Combined)': []}
     
     for epoch in range(1, 21):
         # train(model, device, train_loader, optimizer, epoch)
+        # run only one of the three model when execute main, comment out the other, try one by one
         digit_train(model, device, train_loader, optimizer, epoch)
-        author_train(model, device, train_loader, optimizer, epoch)
-        train_together(model, device, train_loader, optimizer, epoch)
-        digit_accuracy, author_accuracy, combined_accuracy = test(model, device, test_loader)
+        # author_train(model, device, train_loader, optimizer, epoch)
+        # train_together(model, device, train_loader, optimizer, epoch)
+        
+        digit_accuracy, author_accuracy = test(model, device, test_loader)
         scheduler.step()
         
         accuracies['Epoch'].append(epoch)
-        accuracies['Digit Accuracy'].append(digit_accuracy)
-        accuracies['Author Accuracy'].append(author_accuracy)
-        accuracies['Combined Accuracy'].append(combined_accuracy)
+        
+        accuracies['Digit Accuracy (Digit)'].append(digit_accuracy)
+        accuracies['Author Accuracy (Digit)'].append(author_accuracy)
+        
+        # accuracies['Digit Accuracy (Author)'].append(digit_accuracy)
+        # accuracies['Author Accuracy (Author)'].append(author_accuracy)
+        
+        # accuracies['Digit Accuracy (Combined)'].append(digit_accuracy)
+        # accuracies['Author Accuracy (Combined)'].append(author_accuracy)
     
     # Save accuracies to Excel file
     df = pd.DataFrame(accuracies)
