@@ -122,34 +122,51 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     scheduler = StepLR(optimizer, step_size=1, gamma=0.7)
     
-    accuracies = {'Epoch': [], 'Digit Accuracy (Digit)': [], 'Author Accuracy (Digit)': []}
-    # accuracies = {'Epoch': [], 'Digit Accuracy (Author)': [], 'Author Accuracy (Author)': []}
-    # accuracies = {'Epoch': [], 'Digit Accuracy (Combined)': [], 'Author Accuracy (Combined)': []}
+    # run only one of the three model when execute main, comment out the other, try one by one
+    # Digit
+    # accuracies = {'Epoch': [], 'Digit Accuracy (Digit)': [], 'Author Accuracy (Digit)': []}
+    # for epoch in range(1, 21):
+    #     # train(model, device, train_loader, optimizer, epoch)
+    #     # run only one of the three model when execute main, comment out the other, try one by one
+    #     digit_train(model, device, train_loader, optimizer, epoch)
+    #     digit_accuracy, author_accuracy = test(model, device, test_loader)
+    #     scheduler.step()
+        
+    #     accuracies['Epoch'].append(epoch)
+    #     accuracies['Digit Accuracy (Digit)'].append(digit_accuracy)
+    #     accuracies['Author Accuracy (Digit)'].append(author_accuracy)
+    # df = pd.DataFrame(accuracies)
+    # df.to_excel('accuracies_digit.xlsx', index=False)
     
+    # Author
+    accuracies = {'Epoch': [], 'Digit Accuracy (Author)': [], 'Author Accuracy (Author)': []}
     for epoch in range(1, 21):
         # train(model, device, train_loader, optimizer, epoch)
         # run only one of the three model when execute main, comment out the other, try one by one
-        digit_train(model, device, train_loader, optimizer, epoch)
-        # author_train(model, device, train_loader, optimizer, epoch)
-        # train_together(model, device, train_loader, optimizer, epoch)
-        
+        author_train(model, device, train_loader, optimizer, epoch)
         digit_accuracy, author_accuracy = test(model, device, test_loader)
         scheduler.step()
         
         accuracies['Epoch'].append(epoch)
-        
-        accuracies['Digit Accuracy (Digit)'].append(digit_accuracy)
-        accuracies['Author Accuracy (Digit)'].append(author_accuracy)
-        
-        # accuracies['Digit Accuracy (Author)'].append(digit_accuracy)
-        # accuracies['Author Accuracy (Author)'].append(author_accuracy)
-        
-        # accuracies['Digit Accuracy (Combined)'].append(digit_accuracy)
-        # accuracies['Author Accuracy (Combined)'].append(author_accuracy)
-    
-    # Save accuracies to Excel file
+        accuracies['Digit Accuracy (Author)'].append(digit_accuracy)
+        accuracies['Author Accuracy (Author)'].append(author_accuracy)
     df = pd.DataFrame(accuracies)
-    df.to_excel('accuracies.xlsx', index=False)
+    df.to_excel('accuracies_author.xlsx', index=False)
+    
+    # Combined
+    # accuracies = {'Epoch': [], 'Digit Accuracy (Combined)': [], 'Author Accuracy (Combined)': []}
+    # for epoch in range(1, 21):
+    #     # train(model, device, train_loader, optimizer, epoch)
+    #     # run only one of the three model when execute main, comment out the other, try one by one
+    #     train_together(model, device, train_loader, optimizer, epoch)
+    #     digit_accuracy, author_accuracy = test(model, device, test_loader)
+    #     scheduler.step()
+    #     accuracies['Epoch'].append(epoch)
+    #     accuracies['Digit Accuracy (Combined)'].append(digit_accuracy)
+    #     accuracies['Author Accuracy (Combined)'].append(author_accuracy)
+    # # Save accuracies to Excel file
+    # df = pd.DataFrame(accuracies)
+    # df.to_excel('accuracies_combined.xlsx', index=False)
     
     torch.save(model.state_dict(), "multi_task_model.pt")
 
