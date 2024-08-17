@@ -12,11 +12,16 @@ import pandas as pd
 def train_rnn(model, device, train_loader, optimizer, epoch):
     model.train()
     for batch_idx, (data, _, author_target) in enumerate(train_loader):
+        # 将图像数据转换为适合 RNN（循环神经网络）和 LSTM（长短时记忆网络）处理的格式
         data = data.view(data.size(0), 64, -1)  # Flatten to line by line pixel values
+        # data.size(0) : 每次训练，模型处理的数量
+        # 64 图像的宽度/行数
+        # -1：这个维度的大小由系统自动计算，以确保重新调整形状后张量的总元素数量与原始张量保持一致
+        
         data, author_target = data.to(device), author_target.to(device)
         optimizer.zero_grad()
         author_output = model(data)
-        author_loss = F.cross_entropy(author_output, author_target)
+        author_loss = F.cross_entropy(author_output, author_target) # 计算交叉熵损失（Cross Entropy Loss）
         author_loss.backward()
         optimizer.step()
         if batch_idx % 100 == 0:
@@ -64,10 +69,10 @@ def main():
     img_dir = 'image'
     train_loader, test_loader, author_to_idx = load_and_preprocess_data(img_dir)
     
-    input_size = 192  # Adjust input_size if needed
-    hidden_size = 128
-    output_size = len(author_to_idx)
-    num_layers = 2
+    input_size = 192 # 彩色图像 (channels, height, width), 一般rgb channels为3. 每一行展成一个向量 3 * 64 = 192
+    hidden_size = 128 # 隐藏层，一般默认128
+    output_size = len(author_to_idx) # 等于分类的数量
+    num_layers = 2 #一层不能处理复杂情况，太多层过拟合 overfitting - 先用两层试试
     
     # model = HandwritingRNN(input_size, hidden_size, output_size, num_layers).to(device)
     model = HandwritingLSTM(input_size, hidden_size, output_size, num_layers).to(device)
